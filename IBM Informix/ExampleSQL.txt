@@ -1,0 +1,4 @@
+SELECT numreceived,numreceivedreq,numredirectedoutscope,numtransferredout
+FROM r_calltypefifteenmin WHERE recordkey IN
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));

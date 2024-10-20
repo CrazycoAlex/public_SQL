@@ -1,0 +1,13 @@
+--Отображение всех таблиц БД:
+SELECT * FROM systables ORDER BY tabname;
+--Отображение всех хранимых процедур БД:
+SELECT * FROM sysprocedures ORDER BY procname;
+--Отображение всех таблиц БД с полями:
+SELECT TRIM(t.tabname) || '.' || TRIM(c.colname) AS table_dot_column 
+FROM systables t JOIN syscolumns c ON t.tabid = c.tabid
+ORDER BY t.tabname, c.colno;
+--Отображение всех хранимых процедур БД с текстом:
+SELECT p.procname, b.data
+FROM sysprocedures p JOIN sysprocbody b ON p.procid=b.procid 
+WHERE b.datakey like 'T'
+ORDER by procname;

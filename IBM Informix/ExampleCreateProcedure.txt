@@ -1,0 +1,40 @@
+CREATE PROCEDURE getUsersInGroup(group_id INT DEFAULT NULL)
+RETURNING INT AS userkey,INT AS userid,INT AS userfirstname,
+INT AS username,INT AS teamkey,INT AS teamsitekey,
+INT AS acdgroupnum,INT AS monitorgroups,INT AS virtualgroupkey,
+INT AS virtualgroupname,INT AS virtualgroup,INT AS virtualgroupdesc;
+DEFINE userkey_ INT;DEFINE userid_ CHAR(8);
+DEFINE userfirstname_ CHAR(30);DEFINE username_ CHAR(35);
+DEFINE teamkey_ INT;DEFINE teamsitekey_ INT;
+DEFINE acdgroupnum_ CHAR(80);DEFINE monitorgroups_ INT;
+DEFINE virtualgroupkey_ INT;DEFINE virtualgroupname_ CHAR(32);
+DEFINE virtualgroup_ CHAR(250);DEFINE virtualgroupdesc_ VARCHAR(250,0);
+IF(group_id IS NOT NULL) THEN SELECT u.userkey,u.userid,u.userfirstname,u.username, 
+ u.teamkey,u.teamsitekey, u.acdgroupnum, u.monitorgroups, 
+ vg.virtualgroupkey, vg.virtualgroupname, vg.virtualgroup, 
+ vg.virtualgroupdesc 
+ INTO userkey_,userid_,userfirstname_,username_, 
+ teamkey_,teamsitekey_,acdgroupnum_,monitorgroups_, 
+ virtualgroupkey_,virtualgroupname_,virtualgroup_, 
+ virtualgroupdesc_ FROM r_users u 
+ JOIN r_uservgmatch uvgm ON u.userkey=uvgm.userkey
+ JOIN r_virtualgroups vg ON vg.virtualgroupkey=uvgm.virtualgroupkey
+ WHERE vg.virtualgroupkey = group_id ORDER by u.userkey;
+ELSE SELECT u.userkey,u.userid,u.userfirstname,u.username, 
+ u.teamkey,u.teamsitekey, u.acdgroupnum, u.monitorgroups, 
+ vg.virtualgroupkey, vg.virtualgroupname, vg.virtualgroup, 
+ vg.virtualgroupdesc 
+ INTO userkey_,userid_,userfirstname_,username_, 
+ teamkey_,teamsitekey_,acdgroupnum_,monitorgroups_, 
+ virtualgroupkey_,virtualgroupname_,virtualgroup_, 
+ virtualgroupdesc_ FROM r_users u 
+ JOIN r_uservgmatch uvgm ON u.userkey=uvgm.userkey
+ JOIN r_virtualgroups vg ON vg.virtualgroupkey=uvgm.virtualgroupkey
+ ORDER by u.userkey;
+END IF;
+RETURN userkey_,userid_,userfirstname_,username_, 
+ teamkey_,teamsitekey_,acdgroupnum_,monitorgroups_, 
+ virtualgroupkey_,virtualgroupname_,virtualgroup_, 
+ virtualgroupdesc_;
+END PROCEDURE;
+
