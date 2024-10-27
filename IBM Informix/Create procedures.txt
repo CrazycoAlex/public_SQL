@@ -1,0 +1,263 @@
+{numreceived - всего в очереди
+numreceivedreq - повторные
+numredirectedoutscope - не отвеченые и не сброшеные
+numtransferredout - перенесенные в другой период}
+CREATE PROCEDURE getTableUsersInQueue() 
+RETURNING INT as numreceived, INT as numreceivedreq,
+INT as numredirectedoutscope, INT as numtransferredout;
+
+DEFINE v_numreceived INT;
+DEFINE v_numreceivedreq INT;
+DEFINE v_numredirectedoutscope INT;
+DEFINE v_numtransferredout INT;
+
+SELECT numreceived,numreceivedreq,numredirectedoutscope,numtransferredout
+INTO v_numreceived,v_numreceivedreq,v_numredirectedoutscope,v_numtransferredout 
+FROM r_calltypefifteenmin WHERE recordkey IN
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));
+
+RETURN v_numreceived,v_numreceivedreq,v_numredirectedoutscope,v_numtransferredout;
+
+END PROCEDURE;
+
+
+{numreceived - всего в очереди}
+CREATE PROCEDURE getRecievedUsersInQueue()
+RETURNING INT as count;
+
+DEFINE v_numreceived INT;
+
+SELECT numreceived INTO v_numreceived
+ FROM r_calltypefifteenmin WHERE recordkey IN
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));
+
+RETURN v_numreceived;
+
+END PROCEDURE;
+
+
+{numredirectedoutscope - не отвеченые и не сброшеные}
+CREATE PROCEDURE getRedirectedUsersInQueue()
+RETURNING INT as count;
+
+DEFINE v_numredirected INT;
+
+SELECT numredirectedoutscope INTO v_numredirected
+ FROM r_calltypefifteenmin WHERE recordkey IN 
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));
+
+RETURN v_numredirected;
+
+END PROCEDURE;
+
+
+{numreceivedreq - повторные}
+CREATE PROCEDURE getReceivedReqUsersInQueue()
+RETURNING INT as count;
+
+DEFINE v_numreceived INT;
+
+SELECT numreceivedreq INTO v_numreceived
+ FROM r_calltypefifteenmin WHERE recordkey IN 
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));
+
+RETURN v_numreceived;
+
+END PROCEDURE;
+
+
+{numtransferredout - перенесенные в другой период}
+CREATE PROCEDURE getTransferredUsersInQueue()
+RETURNING INT as count;
+
+DEFINE v_numtransferred INT;
+
+SELECT numtransferredout INTO v_numtransferred
+ FROM r_calltypefifteenmin WHERE recordkey IN 
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));
+
+RETURN v_numtransferred;
+
+END PROCEDURE;
+
+{среднее арифметическое ожидающих в периоде}
+{mincountwaiting - минимальное количество ожидающих в 15-минутном периоде}
+{maxcountwaiting - максимальное количество ожидающих в 15-минутном периоде}
+CREATE PROCEDURE getMiddleWaitingUsersInQueue()
+RETURNING INT as count;
+
+DEFINE v_numwaiting INT;
+
+SELECT (maxcountwaiting + mincountwaiting)/2 AS numwaiting INTO v_numwaiting
+ FROM r_calltypefifteenmin WHERE recordkey IN 
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));
+
+RETURN v_numwaiting;
+
+END PROCEDURE;
+
+
+{waitcountbegin ожидающие на конец 15-минутного периода}
+CREATE PROCEDURE getWaitingUsersInQueue()
+RETURNING INT as count;
+
+DEFINE v_numwait INT;
+
+SELECT waitcountbegin INTO v_numwait
+ FROM r_calltypefifteenmin WHERE recordkey IN 
+ (SELECT MAX(recordkey) FROM r_calltypefifteenmin WHERE recordtimestamp IN
+ (SELECT MAX(recordtimestamp) FROM r_calltypefifteenmin));
+
+RETURN v_numwait;
+
+END PROCEDURE;
+
+
+{«арегистрированные операторы}
+DROP PROCEDURE getRegisteredAgentsCount();
+CREATE PROCEDURE getRegisteredAgentsCount()
+RETURNING INT as count;
+
+DEFINE v_agentcount INT;
+
+SELECT COUNT(DISTINCT agentkey) INTO v_agentcount FROM r_agentonoff;
+
+RETURN v_agentcount;
+
+END PROCEDURE;
+
+
+{ ол-во обработанных звонков}
+DROP PROCEDURE getCallRecordsCount();
+CREATE PROCEDURE getCallRecordsCount()
+RETURNING INT as count;
+
+DEFINE v_recordscount INT;
+
+SELECT COUNT(DISTINCT callid) INTO v_recordscount FROM r_callrecord;
+
+RETURN v_recordscount;
+
+END PROCEDURE;
+
+
+{—реднее врем€ разговора (¬рем€ обслуживани€ контакта)}
+DROP PROCEDURE getMiddleCallDuration();
+CREATE PROCEDURE getMiddleCallDuration()
+RETURNING INT as CallDuration;
+
+DEFINE v_MiddleCallDuration INT;
+
+SELECT AVG(callend) INTO v_MiddleCallDuration FROM r_callrecord;
+
+RETURN v_MiddleCallDuration;
+
+END PROCEDURE;
+
+
+{—реднее врем€ ожидани€ (ќтвеченный —реднее врем€ ожидани€)}
+DROP PROCEDURE getMiddleQueueDuration();
+CREATE PROCEDURE getMiddleQueueDuration()
+RETURNING INT as QueueDuration;
+
+DEFINE v_MiddleQueueDuration INT;
+
+SELECT AVG(queueend - queuestart) INTO v_MiddleQueueDuration FROM r_callrecord;
+
+RETURN v_MiddleQueueDuration;
+
+END PROCEDURE;
+
+
+{ќбрабатываемые маршрутизированные (ќператоры в работе)}
+DROP PROCEDURE getTalkingAgentsCount();
+CREATE PROCEDURE getTalkingAgentsCount()
+RETURNING INT as count;
+
+DEFINE v_TalkingAgentsCount INT;
+DEFINE v_DTNow DATETIME YEAR TO FRACTION(5);
+
+LET v_DTNow = CURRENT;
+
+SELECT count(DISTINCT a.agentkey) INTO v_TalkingAgentsCount FROM r_callrecord c  
+ JOIN r_agentrecord a ON a.callid=c.callid 
+ WHERE (c.callstart <= v_DTNow) 
+ AND ((c.disconnecttime >= v_DTNow) OR(c.disconnecttime IS NULL));
+ 
+RETURN v_TalkingAgentsCount;
+
+END PROCEDURE;
+
+
+{—вободные операторы}
+DROP PROCEDURE getFreeAgentsCount();
+CREATE PROCEDURE getFreeAgentsCount()
+RETURNING INT as count;
+
+DEFINE v_TalkingAgentsCount INT;
+DEFINE v_FreeAgentsCount INT;
+DEFINE v_agentcount INT;
+
+SELECT count(DISTINCT a.agentkey) INTO v_TalkingAgentsCount FROM r_callrecord c 
+ JOIN r_agentrecord a ON a.callid=c.callid
+ WHERE (c.callstart <= CURRENT) 
+ AND ((c.disconnecttime >= CURRENT) OR(c.disconnecttime IS NULL));
+
+SELECT COUNT(DISTINCT agentkey) INTO v_agentcount FROM r_agentonoff;
+
+LET v_FreeAgentsCount = v_agentcount - v_TalkingAgentsCount;
+ 
+RETURN v_FreeAgentsCount;
+
+END PROCEDURE;
+
+
+{ ол-во звонков в ожидании}
+DROP PROCEDURE getQueueCount();
+CREATE PROCEDURE getQueueCount()
+RETURNING INT as count;
+
+DEFINE v_QueueCount INT;
+
+SELECT count(DISTINCT a.callid) INTO v_QueueCount FROM r_callrecord c 
+ JOIN r_agentrecord a ON a.callid=c.callid
+ WHERE (c.callstart <= CURRENT) AND (c.queuestart > 0) 
+ AND ((c.disconnecttime >= CURRENT) OR(c.disconnecttime IS NULL));
+ 
+RETURN v_QueueCount;
+
+END PROCEDURE;
+
+
+
+
+
+
+
+{«арегистрированные операторы в статусе On}
+CREATE PROCEDURE getAgentsStatusIsOnCount()
+RETURNING INT as count;
+
+DEFINE v_agentcount INT;
+
+SELECT COUNT(DISTINCT agentkey) INTO v_agentcount FROM agentonoff
+
+
+SELECT actiontime, agentkey, action FROM r_agentonoff a
+INNER JOIN agentonoff a1 ON a.agentkey= a1.agentkey AND a1.action = 1  
+INNER JOIN agentonoff a2 ON a.agentkey= a2.agentkey AND a2.action = 2  
+WHERE agentkey IN
+ (SELECT DISTINCT agentkey FROM agentonoff) AND action = 1
+
+SELECT actiontime FROM agentonoff WHERE agentkey IN
+ (SELECT DISTINCT agentkey FROM agentonoff) AND action = 2
+
+RETURN v_agentcount;
+
+END PROCEDURE;
